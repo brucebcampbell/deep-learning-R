@@ -1,0 +1,116 @@
+---
+title: "greta demo"
+author: "Bruce Campbell"
+date: "5/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+https://rviews.rstudio.com/2018/04/23/on-first-meeting-greta/
+
+greta lets users write TensorFlow-based Bayesian models directly in R. 
+
+We demo greta with a model used by Richard McElreath in section 8.3 of Statistical Rethinking: A Bayesian Course with Examples in R and Stan. 
+This model seeks to explain the log of a country’s GDP based on a measure of terrain ruggedness while controlling for whether or not the country is in Africa. 
+I am going to use it just to illustrate MCMC sampling with greta. The extended example in McElreath’s book, however, is a meditation on the subtleties of modeling interactions, and is well worth studying.
+
+DiagrammeR is for plotting the TensorFlow flow diagram of the model, and bayesplot is used to plot trace diagrams of the Markov chains. 
+
+The rugged data set which provides 52 variables for 234 is fairly interesting, but we will use a trimmed-down data set with only 170 counties and three variables.
+
+```{r}
+library(rethinking)
+library(greta)
+library(DiagrammeR)
+library(bayesplot)
+library(ggplot2)
+
+# Example from section 8.3 Statistical Rethinking
+data(rugged)
+d <- rugged
+d$log_gdp <- log(d$rgdppc_2000)
+dd <- d[complete.cases(d$rgdppc_2000), ]
+dd_trim <- dd[ , c("log_gdp","rugged","cont_africa")]
+head(dd_trim)
+set.seed(1234)
+```
+
+In this section of code, we set up the TensorFlow data structures. The first step is to move the data into greta arrays. These data structures behave similarly to R arrays in that they can be manipulated with functions. However, greta doesn’t immediately calculate values for new arrays. It works out the size and shape of the result and creates a place-holder data structure.
+
+```{r}
+#data
+g_log_gdp <- as_data(dd_trim$log_gdp)
+g_rugged <- as_data(dd_trim$rugged)
+g_cont_africa <- as_data(dd_trim$cont_africa)
+```
+
+In this section, we set up the Bayesian model. All parameters need prior probability distributions. Note that the parameters a, bR, bA, bAR, sigma, and mu are all new greta arrays that don’t contain any data. a is 1 x 1 array and mu is a 170 x 1 array with one slot for each observation.
+
+The distribution() function sets up the likelihood function for the model.
+
+```{r}
+# Variables and Priors
+
+a <- normal(0, 100)
+bR <- normal(0, 10)
+bA <- normal(0, 10)
+bAR <- normal(0,10)
+sigma <- cauchy(0,2,truncation=c(0,Inf))
+```
+
+```{r}
+a  
+mu <- a + bR*g_rugged + bA*g_cont_africa + bAR*g_rugged*g_cont_africa
+
+dim(mu)
+
+distribution(g_log_gdp) = normal(mu, sigma)
+```
+
+The model() function does all of the work. It fits the model and produces a fairly complicated object organized as three lists that contain, respectively, the R6 class, TensorFlow structures, and the various greta data arrays.
+
+```{r}
+# defining the model
+mod <- model(a,bR,bA,bAR,sigma)
+
+str(mod,give.attr=FALSE,max.level=1)
+```
+
+Plotting mod produces the TensorFlow flow diagram that shows the structure of the underlying TensorFlow model, which is simple for this model and easily interpretable.
+
+```{r}
+# plotting
+plot(mod)
+```
+
+Next, we use the greta function mcmc() to sample from the posterior distributions defined in the model.
+
+```{r}
+# sampling
+draws <- mcmc(mod, n_samples = 1000)
+summary(draws)
+```
+
+Now that we have the samples of the posterior distributions of the parameters in the model, it is straightforward to examine them. Here, we plot the posterior distribution of the interaction term.
+
+```{r}
+mat <- data.frame(matrix(draws[[1]],ncol=5))
+names(mat) <- c("a","bR","bA","bAR","sigma")
+#head(mat)
+# http://www.cookbook-r.com/Graphs/Plotting_distributions_(ggplot2)/
+ggplot(mat, aes(x=bAR)) + 
+  geom_histogram(aes(y=..density..), binwidth=.05, colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666")  
+```
+
+Finally, we examine the trace plots for the MCMC samples using the greta function mcmc_trace(). The plots for each parameter appear to be stationary (flat, i.e., centered on a constant value) and well-mixed (there is no obvious correlation between points). mcmc_intervals() plots the uncertainty intervals for each parameter computed from posterior draws with all chains merged.
+
+```{r}
+mcmc_trace(draws)
+
+
+mcmc_intervals(draws)
+```
