@@ -2,7 +2,7 @@
 title: "CFAR-10 Small"
 author: "Bruce Campbell"
 date: "5/7/2018"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}

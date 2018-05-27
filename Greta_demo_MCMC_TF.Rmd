@@ -2,7 +2,7 @@
 title: "greta demo"
 author: "Bruce Campbell"
 date: "5/7/2018"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -22,9 +22,16 @@ DiagrammeR is for plotting the TensorFlow flow diagram of the model, and bayespl
 The rugged data set which provides 52 variables for 234 is fairly interesting, but we will use a trimmed-down data set with only 170 counties and three variables.
 
 ```{r}
+# install.packages(c("coda","mvtnorm","devtools","loo"))
+# library(devtools)
+# devtools::install_github("rmcelreath/rethinking")
+```
+
+
+```{r}
 library(rethinking)
 library(greta)
-library(DiagrammeR)
+#library(DiagrammeR)
 library(bayesplot)
 library(ggplot2)
 
@@ -83,7 +90,7 @@ Plotting mod produces the TensorFlow flow diagram that shows the structure of th
 
 ```{r}
 # plotting
-plot(mod)
+#plot(mod)
 ```
 
 Next, we use the greta function mcmc() to sample from the posterior distributions defined in the model.

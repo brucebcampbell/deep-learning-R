@@ -20,40 +20,10 @@ sudo pip-3.5 install jupyter
 sudo pip-3.5 install keras
 ```
 
-```{r}
-
-
 ## Stochastic Gradient Markov Chain Monte Carlo
 Provides functions that performs popular stochastic gradient Markov chain Monte Carlo (SGMCMC) methods on user specified models. The required gradients are automatically calculated using 'TensorFlow'
 
-```
-install.packages("sgmcmc")
-
-#Demo Mixture Model
-
-install.packages("sgmcmc")
-install.packages("tensorflow")
-install_tensorflow()
-#install_tensorflow_extras()
-install.packages("DiagrammeR")
-
-install.packages("keras")
-install_keras()
-
-library(tensorflow)
-#Test Tensorflow
-sess = tf$Session()
-hello <- tf$constant('Hello, TensorFlow!')
-sess$run(hello)
-
-
-###Keras Example
-library(keras)
-mnist <- dataset_mnist()
-x_train <- mnist$train$x
-y_train <- mnist$train$y
-x_test <- mnist$test$x
-y_test <- mnist$test$y
+```{r}
 
 #Stochastic Gradient MCMC
 library(sgmcmc)
